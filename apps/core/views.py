@@ -10,6 +10,8 @@ import openpyxl, csv, io, chardet
 import pandas as pd
 from io import BytesIO
 from openpyxl.styles import Border, Side
+from django.contrib import messages
+from collections import defaultdict
 # MY MODELS
 from .models import CustomUser, Product, Category, TypeOfPrice
 from .forms import ImportProductsForm
@@ -18,24 +20,43 @@ from .forms import ImportProductsForm
 
 @login_required
 def index(request):
-    query = request.GET.get('q')
-    category_id = request.GET.get('category_id')
+    query = request.GET.get('q', '')
+    category_id = request.GET.get('category_id', '')
+    sort_by = request.GET.get('sort_by', 'name')
+    order_by = request.GET.get('order_by', 'asc')
+
+    products = Product.objects.all()
 
     if query:
-        search_terms = query.split()  # Разбиваем запрос на отдельные слова
-        products = Product.objects.all()
+        search_terms = query.split()
         for term in search_terms:
             products = products.filter(
                 Q(name__icontains=term) | Q(articul__icontains=term)
             )
-    elif category_id:
+
+    if category_id:
         category = get_object_or_404(Category, id=category_id)
-        products = Product.objects.filter(category=category)
-    else:
-        products = Product.objects.all()
+        products = products.filter(category=category)
+
+    # Применяем сортировку
+    if sort_by:
+        if sort_by == 'category':
+            products = products.order_by('category__name' if order_by == 'asc' else '-category__name')
+        elif sort_by == 'articul':
+            products = products.order_by('articul' if order_by == 'asc' else '-articul')
+        else:
+            products = products.order_by(sort_by if order_by == 'asc' else '-' + sort_by)
 
     categories = Category.objects.all()
-    return render(request, 'pages/index.html', locals())
+    context = {
+        'products': products,
+        'categories': categories,
+        'query': query,
+        'category_id': category_id,
+        'order_by': order_by
+    }
+    return render(request, 'pages/index.html', context)
+
 def user_login(request):
     users = CustomUser.objects.all()
     if request.method == 'POST':
@@ -142,39 +163,64 @@ def export_products_to_excel(request):
 
     return response
 
-from django.contrib import messages
-
 def import_products(request):
     if request.method == 'POST':
-        xlsx_file = request.FILES.get('file')  # Замените 'file' на имя вашего поля для загрузки файла
+        xlsx_file = request.FILES.get('file')
         if not xlsx_file.name.endswith('.xlsx'):
-            messages.error(request, 'This is not an XLSX file')
+            messages.error(request, 'Это не файл XLSX')
             return redirect('import_products')
 
         workbook = openpyxl.load_workbook(xlsx_file)
         sheet = workbook.active
 
+        # Словарь для хранения данных о продуктах с одинаковыми артикулами
+        updated_products = defaultdict(lambda: {'quantity': 0, 'price': None, 'type_of_price': None, 'category': None, 'name': None})
+
         for row in sheet.iter_rows(min_row=2, values_only=True):
-            # Пример строки: "Название,Артикул,Количество,Цена,Тип цены,Категория"
+            # Извлечение данных из строки
             name, articul, quantity, price, type_of_price, category_name = row
-            
+
+            # Проверка, что обязательные поля не None
+            if not all([name, articul, price, quantity, type_of_price, category_name]):
+                messages.warning(request, f'Пропущены обязательные данные в строке: {row}')
+                continue  # Пропустить строку, если отсутствуют данные
+
             # Найдите или создайте категорию
             category, created = Category.objects.get_or_create(name=category_name)
-            
-            # Найдите или создайте тип цены (если у вас есть типы цен)
-            type_of_price_obj, created = TypeOfPrice.objects.get_or_create(name=type_of_price)
-            
-            # Создайте или обновите товар
-            Product.objects.create(
-                name=name,
-                articul=articul,
-                price=price,
-                quantity=quantity,
-                type_of_price=type_of_price_obj,
-                category=category
-            )
 
-        messages.success(request, 'Products imported successfully')
-        return redirect('index')
-    
+            # Найдите или создайте тип цены
+            type_of_price_obj, created = TypeOfPrice.objects.get_or_create(name=type_of_price)
+
+            # Если артикул уже встречался, накопить количество
+            updated_products[articul]['quantity'] += quantity
+            updated_products[articul]['price'] = price  # Можно также обновлять цену
+            updated_products[articul]['type_of_price'] = type_of_price_obj
+            updated_products[articul]['category'] = category
+            updated_products[articul]['name'] = name
+
+        # Обработка накопленных товаров
+        for articul, product_data in updated_products.items():
+            product = Product.objects.filter(articul=articul).first()
+
+            if product:
+                # Если продукт существует, обновить количество и другие поля
+                product.quantity += product_data['quantity']
+                product.price = product_data['price']  # Обновить цену, если нужно
+                product.type_of_price = product_data['type_of_price']
+                product.category = product_data['category']
+                product.save()
+            else:
+                # Если продукт не существует, создать новый
+                Product.objects.create(
+                    name=product_data['name'],
+                    articul=articul,
+                    price=product_data['price'],
+                    quantity=product_data['quantity'],
+                    type_of_price=product_data['type_of_price'],
+                    category=product_data['category']
+                )
+
+        messages.success(request, 'Товары успешно импортированы')
+        return redirect('import_products')
+
     return render(request, 'pages/import_products.html')

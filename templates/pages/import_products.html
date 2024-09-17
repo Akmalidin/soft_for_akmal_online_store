@@ -14,4 +14,36 @@
     <input type="file" name="file" class="form-control">
     <button type="submit" class="btn btn-primary">Импортировать</button>
 </form>
+
+<!-- Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="successModalLabel">Успешно!</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Товары успешно загружены!
+      </div>
+      <div class="modal-footer">
+        <a href="{% url 'index' %}" class="btn btn-primary">Перейти к списку</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    {% if messages %}
+      {% for message in messages %}
+        {% if message.tags == 'success' %}
+          var successModal = new bootstrap.Modal(document.getElementById('successModal'));
+          successModal.show();
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  });
+</script>
+
 {% endblock %}

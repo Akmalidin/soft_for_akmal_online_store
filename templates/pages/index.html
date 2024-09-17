@@ -12,7 +12,7 @@
                     <div class="section_search w-50">
                         <form action="" method="GET">
                             <div class="input-group mb-3">
-                                <input type="text" class="form-control" placeholder="Поиск по наименованию и по артиклу ..." aria-label="Поиск" name="q" value="{{ request.GET.q }}">
+                                <input type="text" class="form-control" placeholder="Поиск по наименованию и по артиклу ..." aria-label="Поиск" name="q" value="{{ query }}">
                                 <button class="btn btn-outline-primary" type="submit" id="button-addon2">
                                     <i class="fas fa-search"></i>
                                 </button>
@@ -30,7 +30,6 @@
     </div>
 </section>
 
-
 <!-- Product list Section -->
 <section class="product_list mt-4 px-5">
     <div class="container-fluid">
@@ -41,11 +40,19 @@
                         <thead>
                             <tr>
                                 <th scope="col">ID</th>
-                                <th scope="col">Категория</th>
-                                <th scope="col" class="text-primary">Наименование</th>
+                                <th scope="col">
+                                    <a href="#" class="sort-link" data-sort="category" data-order="{{ order_by }}" data-query="{{ query }}" data-category="{{ category_id }}">Категория</a>
+                                </th>
+                                <th scope="col">
+                                    <a href="#" class="sort-link" data-sort="name" data-order="{{ order_by }}" data-query="{{ query }}" data-category="{{ category_id }}">Наименование</a>
+                                </th>
                                 <th scope="col">Изображение</th>
-                                <th scope="col" class="text-primary">Код</th>
-                                <th scope="col" class="text-primary">Цена</th>
+                                <th scope="col" class="text-primary">
+                                    <a href="#" class="sort-link" data-sort="articul" data-order="{{ order_by }}" data-query="{{ query }}" data-category="{{ category_id }}">Код</a>
+                                </th>
+                                <th scope="col">
+                                    <a href="#" class="sort-link" data-sort="price" data-order="{{ order_by }}" data-query="{{ query }}" data-category="{{ category_id }}">Цена</a>
+                                </th>
                                 <th scope="col">Кол-во</th>
                                 <th scope="col">Тип цены</th>
                                 <th scope="col">Поступил в склад</th>
@@ -54,63 +61,63 @@
                             </tr>
                         </thead>
                         <tbody class="align-middle">
-                            {% for product in products %}
+                            {% if products %}
+                                {% for product in products %}
+                                    <tr>
+                                        <th class="product_id">{{ product.id }}</th>
+                                        <td class="product_category">{{ product.category.name }}</td>
+                                        <td class="product_name">{{ product.name }}</td>
+                                        <td class="product_image portfolio-item">
+                                            <ul class="row" style="list-style: none;">
+                                                {% if product.images.all %}
+                                                    {% for img in product.images.all|slice:":1" %}
+                                                        <li class="mix hens col-xl-3 col-md-4 col-12 col-sm-6 pd">
+                                                            <img src="{{ img.img.url }}" alt="Product Image" />
+                                                            <div class="portfolio-overlay d-flex align-items-center justify-content-center">
+                                                                <div class="overlay-content">
+                                                                    <a data-fancybox="gallery-{{ product.id }}" title="Нажмите чтобы увеличить" href="{{ img.img.url }}" data-size="1200x600">
+                                                                        <div class="magnify-icon">
+                                                                            <p><span><i class="fas fa-eye"></i></span></p>
+                                                                        </div>
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <li class="mix hens col-xl-3 col-md-4 col-12 col-sm-6 pd">
+                                                        <img src="{% static 'img/nophoto.jpg' %}" alt="Placeholder Image" />
+                                                        <div class="portfolio-overlay d-flex align-items-center justify-content-center">
+                                                            <div class="overlay-content">
+                                                                <a data-fancybox="gallery-{{ product.id }}" title="Нажмите чтобы увеличить" href="{% static 'img/nophoto.jpg' %}" data-size="1200x600">
+                                                                    <div class="magnify-icon">
+                                                                        <p><span><i class="fas fa-eye"></i></span></p>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                {% endif %}
+                                            </ul>
+                                        </td>
+                                        <td class="product_code">{{ product.articul }}</td>
+                                        <td class="product_price">{{ product.price }} с</td>
+                                        <td class="product_quantity">{{ product.quantity }} шт</td>
+                                        <td class="product_type"><span class="bg-warning p-1 rounded">{{ product.type_of_price }}</span></td>
+                                        <td class="product_created">{{ product.created_at }}</td>
+                                        <td class="product_updated">{{ product.last_updated }}</td>
+                                        <td class="product_action">
+                                            <a href="https://wa.me/+996553565674?text=Здравствуйте,%20Меня%20интересует%20{{ product.name }}%20Код:%20{{ product.articul }}" class="btn btn-primary" target="_blank">
+                                                <i class="fas fa-cart-plus"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
                                 <tr>
-                                    <th class="product_id">{{ product.id }}</th>
-                                    <td class="product_category">{{ product.category.name }}</td>
-                                    <td class="product_name">{{ product.name }}</td>
-                                    <td class="product_image portfolio-item">
-                                        <ul class="row" style="list-style: none;">
-                                            {% for img in product.images.all|slice:":1" %}
-    <li class="mix hens col-xl-3 col-md-4 col-12 col-sm-6 pd">
-        <img src="{{ img.img.url }}" alt="Product Image" />
-        <div class="portfolio-overlay d-flex align-items-center justify-content-center">
-            <div class="overlay-content">
-                <a data-fancybox="gallery-{{ product.id }}" title="Нажмите чтобы увеличить" href="{{ img.img.url }}" data-size="1200x600">
-                    <div class="magnify-icon">
-                        <p><span><i class="fas fa-eye"></i></span></p>
-                    </div>
-                </a>
-            </div>
-        </div>
-    </li>
-{% empty %}
-    <!-- Если нет изображений -->
-    <li class="mix hens col-xl-3 col-md-4 col-12 col-sm-6 pd">
-        <img src="{% static 'img/nophoto.jpg' %}" alt="Placeholder Image" />
-        <div class="portfolio-overlay d-flex align-items-center justify-content-center">
-            <div class="overlay-content">
-                <a data-fancybox="gallery-{{ product.id }}" title="Нажмите чтобы увеличить" href="{% static 'img/nophoto.jpg' %}" data-size="1200x600">
-                    <div class="magnify-icon">
-                        <p><span><i class="fas fa-eye"></i></span></p>
-                    </div>
-                </a>
-            </div>
-        </div>
-    </li>
-{% endfor %}
-
-{% for img in product.images.all|slice:"1:" %}
-    <li style="display: none;">
-        <a data-fancybox="gallery-{{ product.id }}" title="Нажмите чтобы увеличить" href="{{ img.img.url }}" data-size="1200x600"></a>
-    </li>
-{% endfor %}
-
-                                        </ul>
-                                    </td>
-                                    <td class="product_code">{{ product.articul }}</td>
-                                    <td class="product_price">{{ product.price }} с</td>
-                                    <td class="product_quantity">{{ product.quantity }} шт</td>
-                                    <td class="product_type"><span class="bg-warning p-1 rounded">{{ product.type_of_price }}</span></td>
-                                    <td class="product_created">{{ product.created_at }}</td>
-                                    <td class="product_updated">{{ product.last_updated }}</td>
-                                    <td class="product_action">
-                                        <a href="https://wa.me/+996553565674?text=Здравствуйте,%20Меня%20интересует%20{{ product.name }}%20Код:%20{{ product.articul }}" class="btn btn-primary" target="_blank">
-                                            <i class="fas fa-cart-plus"></i>
-                                        </a>
-                                    </td>
+                                    <td colspan="11">Нет доступных продуктов</td>
                                 </tr>
-                            {% endfor %}
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -120,29 +127,20 @@
 </section>
 
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-<script src="lib/easing/easing.min.js"></script>
-<script src="lib/waypoints/waypoints.min.js"></script>
-<script src="lib/counterup/counterup.min.js"></script>
-<script src="lib/owlcarousel/owl.carousel.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.6/umd/popper.min.js" integrity="sha512-6UofPqm0QupIL0kzS/UIzekR73/luZdC6i/kXDbWnLOJoqwklBK6519iUnShaYceJ0y4FaiPtX/hRnV/X/xlUQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js" integrity="sha512-uURl+ZXMBrF4AwGaWmEetzrd+J5/8NRkWAvJx5sbPSSuOb0bZLqf+tOzniObO00BjHa/dD7gub9oCGMLPQHtQA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mixitup/3.3.1/mixitup.min.js" integrity="sha512-nKZDK+ztK6Ug+2B6DZx+QtgeyAmo9YThZob8O3xgjqhw2IVQdAITFasl/jqbyDwclMkLXFOZRiytnUrXk/PM6A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
-    var containerEl = document.querySelector(".portfolio-item");
-    var mixer = mixitup(containerEl, {
-        animation: {
-            effects: "fade translateZ(-100px)",
-            effectsIn: "fade translateY(-100%)",
-            easing: "cubic-bezier(0.645, 0.045, 0.355, 1)"
-        }
-    });
-    $("[data-fancybox]").fancybox({
-        loop: true,
-        hash: true,
-        transitionEffect: "slide",
-        clickContent: function (current, event) {
-            return current.type === "image" ? "next" : false;
-        }
+    $(document).ready(function() {
+        $('.sort-link').on('click', function(e) {
+            e.preventDefault();
+            
+            var sortField = $(this).data('sort');
+            var currentOrder = $(this).data('order');
+            var newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+            var query = $(this).data('query');
+            var categoryId = $(this).data('category');
+            
+            var newUrl = `?q=${query}&category_id=${categoryId}&sort_by=${sortField}&order_by=${newOrder}`;
+            window.location.href = newUrl;
+        });
     });
 </script>
 {% endblock %}

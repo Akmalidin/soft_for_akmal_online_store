@@ -73,7 +73,7 @@ class Product(models.Model):
     id = models.BigAutoField(primary_key=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name='Категория')
     name = models.CharField(max_length=255, verbose_name='Наименование')
-    articul = models.CharField(max_length=255, verbose_name='Артикул')
+    articul = models.CharField(max_length=255, verbose_name='Артикул', unique=True)
     price = models.IntegerField(verbose_name='Цена')
     quantity = models.IntegerField(verbose_name='Кол-во')
     type_of_price = models.ForeignKey(TypeOfPrice, on_delete=models.CASCADE, verbose_name='Тип цены')

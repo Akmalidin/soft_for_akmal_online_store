@@ -9,7 +9,7 @@ class ProductImageInline(admin.TabularInline):
     model = ProductImage
     extra = 1
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'articul', 'price', 'type_of_price', 'created_at', 'last_updated')
+    list_display = ('id', 'name', 'articul', 'quantity', 'price', 'type_of_price', 'created_at', 'last_updated')
     list_display_links = ('id', 'name')
     inlines = [ProductImageInline]
 
